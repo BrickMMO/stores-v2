@@ -22,7 +22,11 @@ function navigation_array($selected = false)
                                     'colour' => 'red',
                                 ],[
                                     'title' => 'Import Stores',
-                                    'url' => '/admin/import',
+                                    'url' => '/admin/import/stores',
+                                    'colour' => 'red',
+                                ],[
+                                    'title' => 'Import Countries',
+                                    'url' => '/admin/import/countries',
                                     'colour' => 'red',
                                 ],[
                                     'br' => '---',
