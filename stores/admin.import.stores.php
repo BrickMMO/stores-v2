@@ -12,7 +12,7 @@ if(!mysqli_num_rows($result))
 {
 
     message_set('Import Error', 'Import countries before importing stores.', 'red');
-    header_redirect('/admin/stores/dashboard');
+    header_redirect('/admin/import/countries');
 }
 
 define('APP_NAME', 'Stores');
@@ -29,8 +29,11 @@ include('../templates/main_header.php');
 
 include('../templates/message.php');
 
-$query = 'TRUNCATE stores';
-mysqli_query($connect, $query);
+
+
+
+// $query = 'TRUNCATE stores';
+// mysqli_query($connect, $query);
 
 $stores_last_import = setting_fetch('STORES_LAST_IMPORT');   
 
@@ -47,16 +50,15 @@ $stores_last_import = setting_fetch('STORES_LAST_IMPORT');
     Stores
 </h1>
 <p>
-    <a href="/city/dashboard">Dashboard</a> / 
-    <a href="/admin/stores/dashboard">Stores</a> / 
+    <a href="/admin/dashboard">Stores</a> / 
     Import Stores
 </p>
-<hr />
-<h2>Importing Stores</h2>
+
+<hr>
+
+<h2>Import Stores</h2>
 
 <p>
-    Total Countries:
-    <span class="w3-tag w3-blue" id="country-count">0</span>
     Importing Stores:
     <span class="w3-tag w3-blue" id="store-count">0/0</span>
     Importing from: 
@@ -69,117 +71,179 @@ $stores_last_import = setting_fetch('STORES_LAST_IMPORT');
     <div class="w3-container w3-green w3-padding w3-center" style="width:0%; min-width: 50px" id="progress">0%</div>
 </div>
 
-<div class="w3-container w3-border w3-padding-16 w3-margin-bottom" id="loading" style="max-height: 500px; overflow: scroll">
+<div class="w3-container w3-border w3-padding-16 w3-margin-bottom" id="loading" style="max-height: 500px; overflow: scroll; display: none;">
     <h3>
         <i class="fa-solid fa-spinner fa-spin"></i>
         Loading...
     </h3>
 </div>
 
+<a href="#" onclick="startScan();" class="w3-button w3-margin-bottom w3-border">
+    <i class="fa-solid fa-cloud-download-alt fa-padding-right"></i>
+    Start Import
+</a> 
+
 <script>
 
     async function fetchStores() {
-        return fetch('/ajax/lego/stores',{
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
+        
+        /*
+        const url = 'https://www.lego.com/api/graphql/StoresDirectory';
+
+        const query = `
+            query StoresDirectoryQuery {
+                storesDirectory {
+                    id
+                    country
+                    region
+                    stores {
+                    storeId
+                    name
+                    phone
+                    state
+                    openingDate
+                    certified
+                    additionalInfo
+                    storeUrl
+                    urlKey
+                    isNewStore
+                    isComingSoon
+                    __typename
+                    }
+                    __typename
                 }
-            })  
-            .then((response)=>response.json())
-            .then((responseJson)=>{return responseJson});
+            }`;
+
+        const requestBody = {
+            query: query
+        };
+
+        const headers = {
+            // Required by GraphQL standard
+            'Content-Type': 'application/json', 
+            // Recommended to bypass security/CSRF checks (matches the PHP fix)
+            'x-apollo-operation-name': 'StoresDirectoryQuery',
+            // Spoofing a User-Agent is less effective in a browser but good practice
+            // Browsers automatically handle cookies and other security checks
+        };
+        */
+
+        let url = '/api/stores.json';
+        let response = await fetch(url);
+        let json = await response.json();
+        let stores = [];    
+
+        const storesData = json.data.storesDirectory
+            
+        storesData.forEach(country => {
+
+            country.stores.forEach(store => {
+
+                stores.push({
+                    country_code: country.country,
+                    region: country.region,
+                    store_id: store.storeId,
+                    name: store.name,
+                    phone: store.phone,
+                    state: store.state,
+                    opening_at: store.openingDate,
+                    certified: store.certified,
+                    additional: store.additionalInfo,
+                    url: store.storeUrl,
+                    slug: store.urlKey,
+                    new: store.isNewStore,
+                    soon: store.isComingSoon
+                });
+
+            });
+
+        });
+
+        return stores;
+        
     }
 
-    async function scanStore(urlKey) {
-        return fetch('/ajax/lego/store/scan/urlKey/'+urlKey,{
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                }
-            })  
-            .then((response)=>response.json())
-            .then((responseJson)=>{return responseJson});
+    
+
+    function startScan()
+    {
+
+        let loading = document.getElementById('loading');
+        loading.style.display = "block";
+
+        scanStores();
+        
     }
 
     async function scanStores() {
 
         let loading = document.getElementById('loading');
         let progress = document.getElementById('progress');
-        let countryCount = document.getElementById('country-count');
         let storeCount = document.getElementById('store-count');
 
         let totalStores = 0;
         let countProgress = 0;
     
-        const resultStore = await fetchStores();
-
-        let countCountry = resultStore.stores.data.storesDirectory;
-
-        countryCount.innerHTML = countCountry.length;
-
-        for(let i = 0; i < countCountry.length; i++){
-            totalStores = totalStores + countCountry[i].stores.length;            
-        }
+        const stores = await fetchStores();
         
-        storeCount.innerHTML = '0/'+totalStores;
+        storeCount.innerHTML = '0/'+stores.length;
 
-        for(let i = 0; i < countCountry.length; i++)
+        for(let i = 0; i < stores.length; i++)
         {
-            for(let j = 0; j < countCountry[i].stores.length; j++){
-                let percent = Math.round(((countProgress+1) / totalStores) * 100)+'%';
 
-                progress.innerHTML = percent;
-                progress.style.width = percent;
+            let percent = Math.round(((countProgress+1) / stores.length) * 100)+'%';
 
-                storeCount.innerHTML = (countProgress+1)+'/'+totalStores;
+            progress.innerHTML = percent;
+            progress.style.width = percent;
 
-                const storeInfo = await scanStore(countCountry[i].stores[j].urlKey);
+            storeCount.innerHTML = (countProgress+1)+'/'+stores.length;
 
-                const detailsStore = storeInfo.storeInfo.data.storeInfo;
+            if(i == 0 ) loading.innerHTML = '';
 
-                if(i == 0 && j == 0) loading.innerHTML = '';
+            let div = document.createElement('div');
 
-                let div = document.createElement('div');
+            let h3 = document.createElement('h3');
+            div.append(h3);
 
-                let h3 = document.createElement('h3');
-                div.append(h3);
+            let h3Text = document.createTextNode(stores[i].name);
+            h3.append(h3Text);
 
-                let h3Text = document.createTextNode(countCountry[i].stores[j].name);
-                h3.append(h3Text);
-
-                // let country = document.createElement('p');
-                // country.innerHTML = '<strong>Country: </strong>' + detailsStore.country;
-                // div.append(country);
-
-                // let city = document.createElement('p');
-                // city.innerHTML = '<strong>City: </strong>' + detailsStore.city;
-                // div.append(city);
-
-                let urlKey = document.createElement('p');
-                urlKey.innerHTML = '<a href="' + detailsStore.storeUrl + 
-                    '">' + detailsStore.storeUrl + '</a>';
-                div.append(urlKey);
-
-                console.log(detailsStore);
-                let hr = document.createElement('hr');
-                div.append(hr);
-
-                loading.prepend(div);
-
-                countProgress++;
-                
-                await new Promise(resolve => setTimeout(resolve, 0));
+            if(stores[i].url == 'store.default.url')
+            {
+                stores[i].url = "https://www.lego.com/stores/stores/" + stores[i].key;
             }
+                
+            let link = document.createElement('p');
+            link.innerHTML = '<a href="' + stores[i].url + 
+                '">' + stores[i].url + '</a>';
+            div.append(link);
+
+            let hr = document.createElement('hr');
+            div.append(hr);
+
+            loading.prepend(div);
+
+            console.log(stores[i]);
+
+            await fetch('/ajax/add',{
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(stores[i])
+            });
+
+            countProgress++;
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
         }     
     }
-
-    scanStores();
 
 </script>
 
     
 <?php
-
-include('../templates/modal_city.php');
 
 include('../templates/main_footer.php');
 include('../templates/debug.php');

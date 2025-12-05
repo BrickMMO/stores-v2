@@ -8,8 +8,10 @@ $countries_last_import = setting_fetch('COUNTRIES_LAST_IMPORT');
 if (isset($_GET['key']) && $_GET['key'] == 'go') 
 {
 
-    $response = json_decode(file_get_contents("http://country.io/names.json"), true);
+    // $response = json_decode(file_get_contents("http://country.io/names.json"), true);
 
+    $response = fetch_json('http://country.io/names.json');
+    
     $query = 'TRUNCATE TABLE countries';
     mysqli_query($connect, $query);
 
@@ -37,7 +39,7 @@ if (isset($_GET['key']) && $_GET['key'] == 'go')
     }
     
     message_set('Import Success', 'Countries list has been imported from Country.io.');
-    header_redirect('/admin/stores/countries');
+    header_redirect('/admin/import/countries');
 
 }
 
@@ -50,7 +52,6 @@ define('PAGE_SELECTED_SUB_PAGE', '/admin/stores/countries');
 
 include('../templates/html_header.php');
 include('../templates/nav_header.php');
-include('../templates/nav_slideout.php');
 include('../templates/nav_sidebar.php');
 include('../templates/main_header.php');
 
@@ -74,10 +75,10 @@ $result = mysqli_query($connect, $query);
     Stores
 </h1>
 <p>
-    <a href="/city/dashboard">Dashboard</a> / 
-    <a href="/admin/stores/dashboard">Stores</a> / 
+    <a href="/admin/dashboard">Stores</a> / 
     Import Countries
 </p>
+
 <hr>
 
 <h2>Import Countries</h2>
@@ -92,7 +93,7 @@ $result = mysqli_query($connect, $query);
 <hr />
 
 <p>
-    Re-importimg the Countries from 
+    Importing the Countries from 
     <a href="http://country.io/">Country.io</a> will:
 </p>
 
@@ -102,7 +103,7 @@ $result = mysqli_query($connect, $query);
 </ul>
             
 <a
-    href="/admin/stores/countries/go"
+    href="/admin/import/countries/go"
     class="w3-button w3-white w3-border"
     onclick="loading();"
 >
@@ -110,8 +111,6 @@ $result = mysqli_query($connect, $query);
 </a>
 
 <?php
-
-include('../templates/modal_city.php');
 
 include('../templates/main_footer.php');
 include('../templates/debug.php');

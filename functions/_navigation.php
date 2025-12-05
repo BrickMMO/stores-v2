@@ -21,12 +21,12 @@ function navigation_array($selected = false)
                                     'url' => '/admin/dashboard',
                                     'colour' => 'red',
                                 ],[
-                                    'title' => 'Import Stores',
-                                    'url' => '/admin/import/stores',
-                                    'colour' => 'red',
-                                ],[
                                     'title' => 'Import Countries',
                                     'url' => '/admin/import/countries',
+                                    'colour' => 'red',
+                                ],[
+                                    'title' => 'Import Stores',
+                                    'url' => '/admin/import/stores',
                                     'colour' => 'red',
                                 ],[
                                     'br' => '---',
