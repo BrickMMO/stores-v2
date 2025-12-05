@@ -51,18 +51,30 @@ $stores_last_import = setting_fetch('STORES_LAST_IMPORT');
 
 <?php if (mysqli_num_rows($result)): ?>
 
-    <div class="w3-container w3-border w3-padding-16 w3-margin-bottom">
+    <table class="w3-table w3-bordered w3-striped w3-margin-bottom">
+        <tr>
+            <th>Name</th>
+            <th>Country</th>
+        </tr>
 
-        <?php while($colour = mysqli_fetch_assoc($result)): ?>
-
-            <div class="w3-col l1 m2 s4 w3-margin-right w3-margin-left w3-center">
-                <div style="width: 75px; height: 75px; background-color: #<?=$colour['rgb']?>"></div>
-                <p>#<?=$colour['rgb']?></p>
-            </div>
-
+        <?php while ($record = mysqli_fetch_assoc($result)): ?>
+            <tr>
+                <td>
+                    <?=$record['name'] ?>
+                    <br>
+                    <small>
+                        URL: <a href="https://www.lego.com/en-ca/stores/store/<?=$record['slug']?>">
+                            https://www.lego.com/en-ca/stores/store/<?=$record['slug']?>
+                        </a>
+                    </small>
+                </td>
+                <td>
+                    <?=$record['long_name'] ?>
+                </td>
+            </tr>
         <?php endwhile; ?>
 
-    </div>
+    </table>
 
 <?php else: ?>
 

@@ -23,17 +23,13 @@ define('PAGE_SELECTED_SUB_PAGE', '/admin/stores/import');
 
 include('../templates/html_header.php');
 include('../templates/nav_header.php');
-include('../templates/nav_slideout.php');
 include('../templates/nav_sidebar.php');
 include('../templates/main_header.php');
 
 include('../templates/message.php');
 
-
-
-
-// $query = 'TRUNCATE stores';
-// mysqli_query($connect, $query);
+$query = 'TRUNCATE stores';
+mysqli_query($connect, $query);
 
 $stores_last_import = setting_fetch('STORES_LAST_IMPORT');   
 
